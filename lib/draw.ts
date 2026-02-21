@@ -23,47 +23,45 @@ export function draw(ctx: CanvasRenderingContext2D, options: DrawOptions) {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
-  // --- Layout calculations ---
+  // --- Layout ---
   const mainFontSize = Math.floor(width * 0.7);
   const mainX = width * 0.47;
   const mainY = height * 0.32;
 
-  // Measure main char
   ctx.font = `900 ${mainFontSize}px ${fontFamily}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const mainMetrics = ctx.measureText(char);
   const charRight = mainX + mainMetrics.width / 2;
 
-  // 。(geometric circle) - larger, positioned at bottom-right of main char
-  const circleRadius = width * 0.065;
-  const circleX = charRight + circleRadius * 0.6;
-  const circleY = mainY + mainFontSize * 0.38;
-  const circleLineWidth = width * 0.008;
+  // 。circle
+  const circleRadius = width * 0.075;
+  const circleX = charRight + circleRadius * 0.35;
+  const circleY = mainY + mainFontSize * 0.40;
+  const circleLineWidth = width * 0.014;
 
-  // Orbital ellipse - wide and flat, like a planetary orbit
-  const orbitCenterX = width * 0.44;
-  const orbitCenterY = circleY + height * 0.005;
-  const orbitRadiusX = width * 0.39;
-  const orbitRadiusY = height * 0.115;
-  const orbitRotation = -0.12;
-  const orbitLineWidth = width * 0.005;
+  // Orbit - center slightly above the circle so it crosses diagonally
+  const orbitCX = width * 0.44;
+  const orbitCY = circleY + height * 0.01;
+  const orbitRX = width * 0.39;
+  const orbitRY = height * 0.115;
+  const orbitRot = -0.12;
+  const orbitLW = width * 0.007;
 
-  // --- Step 1: Draw the full orbital ellipse ---
+  // ===========================
+  // DRAWING - layered approach
+  // ===========================
+
+  // 1. Draw full orbit ellipse (background layer)
   ctx.save();
   ctx.strokeStyle = "#000000";
-  ctx.lineWidth = orbitLineWidth;
+  ctx.lineWidth = orbitLW;
   ctx.beginPath();
-  ctx.ellipse(
-    orbitCenterX, orbitCenterY,
-    orbitRadiusX, orbitRadiusY,
-    orbitRotation,
-    0, Math.PI * 2
-  );
+  ctx.ellipse(orbitCX, orbitCY, orbitRX, orbitRY, orbitRot, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
 
-  // --- Step 2: White-out behind the main character area ---
+  // 2. White mask behind character area
   ctx.save();
   ctx.fillStyle = "#ffffff";
   const maskPadX = width * 0.02;
@@ -74,37 +72,36 @@ export function draw(ctx: CanvasRenderingContext2D, options: DrawOptions) {
   ctx.fillRect(maskLeft, maskTop, maskW, maskH);
   ctx.restore();
 
-  // --- Step 3: Redraw bottom arc of orbit (visible below the character) ---
+  // 3. Redraw bottom arc of orbit (visible below character)
   ctx.save();
   ctx.strokeStyle = "#000000";
-  ctx.lineWidth = orbitLineWidth;
+  ctx.lineWidth = orbitLW;
   ctx.beginPath();
-  ctx.ellipse(
-    orbitCenterX, orbitCenterY,
-    orbitRadiusX, orbitRadiusY,
-    orbitRotation,
-    Math.PI * 0.35, Math.PI * 1.0
-  );
+  ctx.ellipse(orbitCX, orbitCY, orbitRX, orbitRY, orbitRot, Math.PI * 0.06, Math.PI * 1.06);
   ctx.stroke();
   ctx.restore();
 
-  // --- Step 4: Draw the main character ---
+  // 4. Main character
   ctx.fillStyle = "#000000";
   ctx.font = `900 ${mainFontSize}px ${fontFamily}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(char, mainX, mainY);
 
-  // --- Step 5: Draw 。as geometric circle ---
-  // White-fill to cut orbit behind the circle
+  // 5. Mask ONLY the upper half of the circle area
+  //    This hides the orbit behind the top of the circle,
+  //    while leaving it visible across the bottom (threading effect)
   ctx.save();
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
-  ctx.arc(circleX, circleY, circleRadius + circleLineWidth * 1.5, 0, Math.PI * 2);
+  // Upper-half semi-circle + padding for line width
+  const maskR = circleRadius + circleLineWidth / 2 + orbitLW;
+  ctx.arc(circleX, circleY, maskR, Math.PI * 1.15, Math.PI * 1.85); // upper portion
+  ctx.closePath();
   ctx.fill();
   ctx.restore();
 
-  // Circle outline
+  // 6. Draw circle outline
   ctx.save();
   ctx.strokeStyle = "#000000";
   ctx.lineWidth = circleLineWidth;
@@ -113,43 +110,13 @@ export function draw(ctx: CanvasRenderingContext2D, options: DrawOptions) {
   ctx.stroke();
   ctx.restore();
 
-  // --- Step 6: Redraw orbit arcs that should be visible around the circle ---
-  // Arc from right side, sweeping up and behind character
-  ctx.save();
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = orbitLineWidth;
-  ctx.beginPath();
-  ctx.ellipse(
-    orbitCenterX, orbitCenterY,
-    orbitRadiusX, orbitRadiusY,
-    orbitRotation,
-    -0.12, Math.PI * 0.35
-  );
-  ctx.stroke();
-  ctx.restore();
-
-  // Arc from bottom sweeping to the left and back up
-  ctx.save();
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = orbitLineWidth;
-  ctx.beginPath();
-  ctx.ellipse(
-    orbitCenterX, orbitCenterY,
-    orbitRadiusX, orbitRadiusY,
-    orbitRotation,
-    Math.PI * 1.0, Math.PI * 1.88
-  );
-  ctx.stroke();
-  ctx.restore();
-
-  // --- Step 7: Subtitle ---
+  // 7. Subtitle
   if (subtitle) {
     const subtitleFontSize = Math.floor(width * 0.055);
     ctx.fillStyle = "#000000";
     ctx.font = `900 ${subtitleFontSize}px ${fontFamily}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-
     const subtitleText = `−${subtitle}−`;
     const subtitleY = height * 0.85;
     ctx.fillText(subtitleText, width / 2, subtitleY);
