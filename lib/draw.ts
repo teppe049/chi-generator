@@ -17,113 +17,148 @@ function getFontFamily(font: FontType): string {
 export function draw(ctx: CanvasRenderingContext2D, options: DrawOptions) {
   const { mainChar, subtitle, font, width, height } = options;
   const fontFamily = getFontFamily(font);
+  const char = mainChar.slice(0, 1) || "チ";
 
   // Clear
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = "#000000";
+  // --- Layout calculations ---
+  // Main char occupies roughly top 60% of canvas
+  const mainFontSize = Math.floor(width * 0.65);
+  const mainX = width * 0.48;
+  const mainY = height * 0.35;
+
+  // Measure main char
+  ctx.font = `900 ${mainFontSize}px ${fontFamily}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-
-  const mainFontSize = Math.floor(width * 0.55);
-  const mainY = height * 0.38;
-  const char = mainChar.slice(0, 1) || "チ";
-
-  // Measure main char for positioning
-  ctx.font = `900 ${mainFontSize}px ${fontFamily}`;
   const mainMetrics = ctx.measureText(char);
-  const mainCharWidth = mainMetrics.width;
+  const charRight = mainX + mainMetrics.width / 2;
 
-  // 。position (needed for orbit calculation)
-  const periodFontSize = Math.floor(mainFontSize * 0.35);
-  const periodX = width / 2 + mainCharWidth / 2 + periodFontSize * 0.15;
-  const periodY = mainY + mainFontSize * 0.32;
+  // 。(geometric circle) - positioned at bottom-right of main char
+  const circleRadius = width * 0.055;
+  const circleX = charRight + circleRadius * 0.3;
+  const circleY = mainY + mainFontSize * 0.33;
+  const circleLineWidth = width * 0.006;
 
-  // --- Orbital ellipse (behind the character) ---
-  // Ellipse centered near the period, sweeping wide
-  const orbitCenterX = width * 0.48;
-  const orbitCenterY = periodY - height * 0.02;
-  const orbitRadiusX = width * 0.38;
-  const orbitRadiusY = height * 0.18;
-  const orbitRotation = -0.15; // slight tilt
+  // Orbital ellipse parameters
+  // The ellipse is centered roughly around the 。, tilted, and wide
+  const orbitCenterX = width * 0.45;
+  const orbitCenterY = circleY - height * 0.01;
+  const orbitRadiusX = width * 0.35;
+  const orbitRadiusY = height * 0.13;
+  const orbitRotation = -0.18; // slight counter-clockwise tilt
+  const orbitLineWidth = width * 0.004;
 
+  // --- Step 1: Draw the full orbital ellipse ---
   ctx.save();
   ctx.strokeStyle = "#000000";
-  ctx.lineWidth = width * 0.004;
+  ctx.lineWidth = orbitLineWidth;
   ctx.beginPath();
   ctx.ellipse(
-    orbitCenterX,
-    orbitCenterY,
-    orbitRadiusX,
-    orbitRadiusY,
+    orbitCenterX, orbitCenterY,
+    orbitRadiusX, orbitRadiusY,
     orbitRotation,
-    0,
-    Math.PI * 2
+    0, Math.PI * 2
   );
   ctx.stroke();
   ctx.restore();
 
-  // --- White-out behind the main character ---
-  // Draw a white rect behind the char area so the orbit line appears behind
+  // --- Step 2: White-out behind the main character area ---
+  // This makes the orbit appear "behind" the character
   ctx.save();
   ctx.fillStyle = "#ffffff";
-  const charLeft = width / 2 - mainCharWidth / 2 - width * 0.02;
-  const charTop = mainY - mainFontSize * 0.48;
-  const charW = mainCharWidth + width * 0.04;
-  const charH = mainFontSize * 0.85;
-  ctx.fillRect(charLeft, charTop, charW, charH);
+  const maskLeft = mainX - mainMetrics.width / 2 - width * 0.03;
+  const maskTop = mainY - mainFontSize * 0.52;
+  const maskW = mainMetrics.width + width * 0.06;
+  const maskH = mainFontSize * 0.88;
+  ctx.fillRect(maskLeft, maskTop, maskW, maskH);
   ctx.restore();
 
-  // --- Redraw orbit arc in front (the part that should appear in front of char) ---
-  // The arc segment at the bottom-right that passes in front
+  // --- Step 3: Redraw the bottom portion of the orbit (in front of mask) ---
+  // This is the part visible below the character
   ctx.save();
   ctx.strokeStyle = "#000000";
-  ctx.lineWidth = width * 0.004;
+  ctx.lineWidth = orbitLineWidth;
   ctx.beginPath();
-  // Only draw the bottom-right portion (roughly from 4 o'clock to 7 o'clock)
   ctx.ellipse(
-    orbitCenterX,
-    orbitCenterY,
-    orbitRadiusX,
-    orbitRadiusY,
+    orbitCenterX, orbitCenterY,
+    orbitRadiusX, orbitRadiusY,
     orbitRotation,
-    Math.PI * 0.55,
-    Math.PI * 0.95
+    Math.PI * 0.42, Math.PI * 1.05
   );
   ctx.stroke();
   ctx.restore();
 
-  // --- Main character ---
+  // --- Step 4: Draw the main character ---
   ctx.fillStyle = "#000000";
   ctx.font = `900 ${mainFontSize}px ${fontFamily}`;
-  ctx.fillText(char, width / 2, mainY);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(char, mainX, mainY);
 
-  // --- 。(period) ---
-  // White circle background to "cut" the orbit line behind the period
+  // --- Step 5: Draw 。as geometric circle ---
+  // First, white-fill the circle area to cut the orbit line behind it
   ctx.save();
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
-  ctx.arc(periodX, periodY, periodFontSize * 0.48, 0, Math.PI * 2);
+  ctx.arc(circleX, circleY, circleRadius + circleLineWidth, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // Draw the period character
-  ctx.fillStyle = "#000000";
-  ctx.font = `900 ${periodFontSize}px ${fontFamily}`;
-  ctx.fillText("。", periodX, periodY);
+  // Draw the circle outline
+  ctx.save();
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = circleLineWidth;
+  ctx.beginPath();
+  ctx.arc(circleX, circleY, circleRadius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
 
-  // --- Redraw orbit arc that passes in front of the period ---
-  // The portion of the orbit that visually crosses over/near the 。
-  // This creates the "thread through" effect seen in the original logo
+  // --- Step 6: Redraw orbit segments that pass in front of/through the 。---
+  // The orbit line enters from the left side and exits from the right side of the circle
+  // We need to find the intersection angles and draw the orbit outside the circle
 
-  // --- Subtitle ---
+  // Draw orbit arc that appears to connect to the circle
+  // Left entry arc (from bottom-left sweeping to the circle)
+  ctx.save();
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = orbitLineWidth;
+  ctx.beginPath();
+  ctx.ellipse(
+    orbitCenterX, orbitCenterY,
+    orbitRadiusX, orbitRadiusY,
+    orbitRotation,
+    -0.08, Math.PI * 0.42
+  );
+  ctx.stroke();
+  ctx.restore();
+
+  // Right exit arc (from the circle sweeping to top-right)
+  ctx.save();
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = orbitLineWidth;
+  ctx.beginPath();
+  ctx.ellipse(
+    orbitCenterX, orbitCenterY,
+    orbitRadiusX, orbitRadiusY,
+    orbitRotation,
+    Math.PI * 1.05, Math.PI * 1.92
+  );
+  ctx.stroke();
+  ctx.restore();
+
+  // --- Step 7: Subtitle ---
   if (subtitle) {
-    const subtitleFontSize = Math.floor(width * 0.055);
+    const subtitleFontSize = Math.floor(width * 0.05);
+    ctx.fillStyle = "#000000";
     ctx.font = `900 ${subtitleFontSize}px ${fontFamily}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
     const subtitleText = `−${subtitle}−`;
-    const subtitleY = height * 0.78;
+    const subtitleY = height * 0.82;
     ctx.fillText(subtitleText, width / 2, subtitleY);
   }
 }

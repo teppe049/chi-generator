@@ -13,7 +13,8 @@ export interface CanvasHandle {
   getCanvas: () => HTMLCanvasElement | null;
 }
 
-const CANVAS_SIZE = 800;
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 720;
 
 export const Canvas = forwardRef<CanvasHandle, CanvasProps>(
   function Canvas({ mainChar, subtitle, font }, ref) {
@@ -40,17 +41,18 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(
         mainChar,
         subtitle,
         font,
-        width: CANVAS_SIZE,
-        height: CANVAS_SIZE,
+        width: CANVAS_WIDTH,
+        height: CANVAS_HEIGHT,
       });
     }, [mainChar, subtitle, font, fontsLoaded]);
 
     return (
       <canvas
         ref={canvasRef}
-        width={CANVAS_SIZE}
-        height={CANVAS_SIZE}
-        className="w-full max-w-md border border-neutral-200 rounded-lg shadow-sm bg-white"
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
+        className="max-w-sm w-full border border-neutral-200 rounded-lg shadow-sm bg-white"
+        style={{ aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}` }}
       />
     );
   }
