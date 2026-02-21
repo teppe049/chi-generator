@@ -1,20 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Serif_JP, Zen_Antique } from "next/font/google";
 import "./globals.css";
-
-const notoSerifJp = Noto_Serif_JP({
-  subsets: ["latin"],
-  weight: ["900"],
-  variable: "--font-noto-serif-jp",
-  display: "swap",
-});
-
-const zenAntique = Zen_Antique({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-zen-antique",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "チ。ジェネレーター",
@@ -29,9 +14,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className={`${notoSerifJp.variable} ${zenAntique.variable}`}>
-        {children}
-      </body>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@900&family=Zen+Antique&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }

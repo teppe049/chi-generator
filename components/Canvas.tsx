@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { draw, type FontType } from "@/lib/draw";
 
 interface CanvasProps {
@@ -18,12 +18,18 @@ const CANVAS_SIZE = 800;
 export const Canvas = forwardRef<CanvasHandle, CanvasProps>(
   function Canvas({ mainChar, subtitle, font }, ref) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [fontsLoaded, setFontsLoaded] = useState(false);
 
     useImperativeHandle(ref, () => ({
       getCanvas: () => canvasRef.current,
     }));
 
     useEffect(() => {
+      document.fonts.ready.then(() => setFontsLoaded(true));
+    }, []);
+
+    useEffect(() => {
+      if (!fontsLoaded) return;
       const canvas = canvasRef.current;
       if (!canvas) return;
 
@@ -37,7 +43,7 @@ export const Canvas = forwardRef<CanvasHandle, CanvasProps>(
         width: CANVAS_SIZE,
         height: CANVAS_SIZE,
       });
-    }, [mainChar, subtitle, font]);
+    }, [mainChar, subtitle, font, fontsLoaded]);
 
     return (
       <canvas

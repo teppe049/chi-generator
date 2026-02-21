@@ -1,5 +1,5 @@
 @import "tailwindcss";
 
 body {
-  font-family: var(--font-noto-serif-jp), serif;
+  font-family: "Noto Serif JP", serif;
 }

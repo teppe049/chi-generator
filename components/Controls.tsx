@@ -34,7 +34,7 @@ export function Controls({
           value={mainChar}
           onChange={(e) => onMainCharChange(e.target.value.slice(0, 1))}
           maxLength={1}
-          className="w-full px-3 py-2 border border-neutral-300 rounded-md text-2xl text-center font-[family-name:var(--font-noto-serif-jp)] focus:outline-none focus:ring-2 focus:ring-neutral-400"
+          className="w-full px-3 py-2 border border-neutral-300 rounded-md text-2xl text-center font-serif focus:outline-none focus:ring-2 focus:ring-neutral-400"
           placeholder="チ"
         />
       </div>
@@ -47,7 +47,7 @@ export function Controls({
           type="text"
           value={subtitle}
           onChange={(e) => onSubtitleChange(e.target.value)}
-          className="w-full px-3 py-2 border border-neutral-300 rounded-md font-[family-name:var(--font-noto-serif-jp)] focus:outline-none focus:ring-2 focus:ring-neutral-400"
+          className="w-full px-3 py-2 border border-neutral-300 rounded-md font-serif focus:outline-none focus:ring-2 focus:ring-neutral-400"
           placeholder="地球の運動について"
         />
       </div>
